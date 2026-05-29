@@ -1,145 +1,101 @@
 # GrahiEdu
 
-Aplikasi pembelajaran untuk anak berkebutuhan khusus dengan backend PHP MySQL dan frontend Flutter. Proyek ini menyediakan:
+GrahiEdu adalah aplikasi pembelajaran untuk anak berkebutuhan khusus. Proyek ini terdiri dari:
 
-- aplikasi mobile Flutter untuk admin, guru BK, dan siswa
-- API backend berbasis PHP
-- database MySQL untuk data pengguna, materi, dan progres belajar
-- penyimpanan file lokal untuk foto profil, materi gambar, dan audio
+- backend PHP + MySQL
+- aplikasi mobile Flutter
+- penyimpanan file upload lokal
 
-## Gambaran Singkat
+README ini dibuat khusus agar mudah diikuti oleh pengguna Windows.
 
-Stack yang dipakai:
-
-- Backend: PHP + MySQL
-- Mobile app: Flutter
-- Web server lokal: XAMPP/LAMPP
-- API format: JSON
-
-Fitur utama:
-
-- login dan registrasi pengguna
-- manajemen user oleh admin
-- materi membaca, menulis, dan berhitung oleh guru
-- pencatatan progres belajar siswa
-- upload foto profil dan aset materi
-
-## Software yang Dibutuhkan
-
-Pastikan software berikut sudah terpasang:
-
-| Software | Minimal | Keterangan |
-| --- | --- | --- |
-| PHP | 7.4+ | Untuk menjalankan API di folder `api/` |
-| MySQL / MariaDB | 5.7+ | Untuk database `app_disabilitas` |
-| XAMPP / LAMPP | Versi terbaru | Agar Apache dan MySQL mudah dijalankan |
-| Flutter SDK | 3.x | Untuk aplikasi mobile di folder `mobile/` |
-| Dart SDK | Mengikuti Flutter | Sudah ikut dari instalasi Flutter |
-| Android Studio / SDK Android | Disarankan | Untuk emulator Android dan build APK |
-| Git | Disarankan | Untuk clone dan version control |
-
-Tambahan yang biasanya dibutuhkan saat development Flutter:
-
-- browser Chrome jika ingin uji target web
-- device Android fisik atau emulator
-- `adb` untuk debug device Android
-
-## Struktur Proyek
-
-```text
-app-disabilitas/
-├── api/                    # Endpoint backend PHP
-├── mobile/                 # Aplikasi Flutter
-├── uploads/                # File upload lokal
-│   ├── profiles/
-│   ├── materials/
-│   ├── images/
-│   └── audio/
-├── schema.sql              # Skema dan data awal database
-└── README.md
-```
+## Isi Proyek
 
 Folder penting:
 
-- `api/db_config.php`: koneksi database
-- `api/auth/`: login dan registrasi
-- `api/admin/`: manajemen user
-- `api/teacher/`: CRUD materi belajar
-- `api/student/`: simpan dan lihat progres
-- `api/user/`: profil, password, upload foto
-- `mobile/lib/core/services/api_service.dart`: base URL API Flutter
+- `api/` : backend PHP
+- `mobile/` : aplikasi Flutter
+- `uploads/` : tempat file upload
+- `schema.sql` : file database
 
-## Persiapan Backend
+## Software yang Harus Diinstal
 
-### 1. Letakkan proyek di folder web server
+Sebelum menjalankan proyek ini, install:
 
-Untuk LAMPP Linux, proyek idealnya berada di:
+1. `XAMPP`
+   Untuk menjalankan Apache dan MySQL.
 
-```bash
-/opt/lampp/htdocs/app-disabilitas
-```
+2. `Flutter SDK`
+   Untuk menjalankan aplikasi mobile.
 
-Jika menggunakan XAMPP Windows, biasanya di:
+3. `Android Studio`
+   Untuk emulator Android dan Android SDK.
 
-```bash
+4. `Git`
+   Jika proyek diambil dari GitHub.
+
+## Lokasi Folder Proyek di Windows
+
+Simpan proyek ini di dalam folder `htdocs` milik XAMPP.
+
+Contoh:
+
+```text
 C:\xampp\htdocs\app-disabilitas
 ```
 
-### 2. Jalankan Apache dan MySQL
+Kalau folder proyek tidak berada di `htdocs`, backend PHP tidak akan bisa diakses lewat browser.
 
-Contoh LAMPP Linux:
+## Langkah 1: Jalankan XAMPP
 
-```bash
-sudo /opt/lampp/lampp start
+1. Buka `XAMPP Control Panel`
+2. Klik `Start` pada:
+   - `Apache`
+   - `MySQL`
+3. Pastikan keduanya berwarna hijau
+
+Jika sudah aktif, coba buka:
+
+```text
+http://localhost/dashboard/
 ```
 
-Lalu pastikan layanan aktif:
+Jika halaman XAMPP terbuka, berarti Apache sudah jalan.
 
-- Apache berjalan
-- MySQL berjalan
+## Langkah 2: Buat Database
 
-### 3. Buat database
-
-Buka phpMyAdmin:
+1. Buka browser
+2. Masuk ke:
 
 ```text
 http://localhost/phpmyadmin
 ```
 
-Buat database dengan nama:
+3. Klik `New`
+4. Buat database dengan nama:
 
-```sql
-CREATE DATABASE app_disabilitas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```text
+app_disabilitas
 ```
 
-### 4. Import skema database
+5. Klik `Create`
 
-Gunakan file [schema.sql](/opt/lampp/htdocs/app-disabilitas/schema.sql) yang sudah tersedia.
+## Langkah 3: Import Database
 
-Opsi phpMyAdmin:
+1. Di phpMyAdmin, klik database `app_disabilitas`
+2. Klik tab `Import`
+3. Klik `Choose File`
+4. Pilih file [schema.sql](/opt/lampp/htdocs/app-disabilitas/schema.sql)
+5. Klik `Go`
 
-1. Pilih database `app_disabilitas`
-2. Buka tab `Import`
-3. Pilih file `schema.sql`
-4. Jalankan import
+Jika berhasil, tabel-tabel database akan otomatis dibuat.
 
-Opsi terminal:
+## Langkah 4: Cek Koneksi Database PHP
 
-```bash
-mysql -u root -p app_disabilitas < schema.sql
-```
+File yang dipakai:
 
-Jika MySQL lokal Anda tidak memakai password untuk user `root`, bisa pakai:
+[api/db_config.php](/opt/lampp/htdocs/app-disabilitas/api/db_config.php)
 
-```bash
-mysql -u root app_disabilitas < schema.sql
-```
-
-### 5. Konfigurasi koneksi database PHP
-
-Periksa file [api/db_config.php](/opt/lampp/htdocs/app-disabilitas/api/db_config.php).
-
-Nilai default saat ini:
+Isi default yang penting:
 
 ```php
 $host = "localhost";
@@ -148,75 +104,91 @@ $username = "root";
 $password = "";
 ```
 
-Ubah `$password` jika MySQL lokal Anda memakai password.
+Penjelasan:
 
-### 6. Pastikan folder upload tersedia
+- `localhost` artinya database ada di komputer yang sama
+- `root` adalah username default MySQL XAMPP
+- `""` artinya password kosong
 
-Project ini memakai folder upload lokal berikut:
+Kalau MySQL Anda memakai password, ubah bagian:
+
+```php
+$password = "";
+```
+
+menjadi:
+
+```php
+$password = "password_mysql_anda";
+```
+
+## Langkah 5: Cek Backend di Browser
+
+Setelah Apache dan MySQL aktif, coba buka:
+
+```text
+http://localhost/app-disabilitas/api/auth/login.php
+```
+
+Atau jika XAMPP Anda memakai port `8080`, buka:
+
+```text
+http://localhost:8080/app-disabilitas/api/auth/login.php
+```
+
+Kalau muncul respons dari PHP, berarti backend sudah terbaca.
+
+Catatan:
+
+- beberapa komputer memakai `http://localhost/...`
+- beberapa setup memakai `http://localhost:8080/...`
+
+Jadi sesuaikan dengan XAMPP di laptop Anda.
+
+## Langkah 6: Siapkan Folder Upload
+
+Pastikan folder berikut ada:
 
 - `uploads/profiles`
 - `uploads/materials`
 - `uploads/images`
 - `uploads/audio`
 
-Jika perlu, buat ulang dengan:
-
-```bash
-mkdir -p /opt/lampp/htdocs/app-disabilitas/uploads/profiles
-mkdir -p /opt/lampp/htdocs/app-disabilitas/uploads/materials
-mkdir -p /opt/lampp/htdocs/app-disabilitas/uploads/images
-mkdir -p /opt/lampp/htdocs/app-disabilitas/uploads/audio
-```
-
-Untuk development lokal Linux, permission tulis kadang perlu disesuaikan:
-
-```bash
-chmod -R 777 /opt/lampp/htdocs/app-disabilitas/uploads
-```
-
-## URL Backend
-
-Jika Apache berjalan pada port default XAMPP/LAMPP di mesin ini, endpoint utama API biasanya:
+Kalau foldernya belum ada, buat manual lewat File Explorer di dalam:
 
 ```text
-http://localhost:8080/app-disabilitas/api
+C:\xampp\htdocs\app-disabilitas\uploads
 ```
 
-Contoh endpoint login:
+## Langkah 7: Jalankan Flutter
 
-```text
-http://localhost:8080/app-disabilitas/api/auth/login.php
-```
-
-Sebelum menjalankan Flutter, uji dulu apakah backend bisa diakses dari browser atau Postman.
-
-## Persiapan Aplikasi Flutter
-
-Masuk ke folder mobile:
+Buka terminal atau Command Prompt, lalu masuk ke folder mobile:
 
 ```bash
-cd /opt/lampp/htdocs/app-disabilitas/mobile
+cd C:\xampp\htdocs\app-disabilitas\mobile
 ```
 
-Lalu install dependency:
+Lalu jalankan:
 
 ```bash
 flutter pub get
 ```
 
-Disarankan cek environment Flutter:
+Setelah itu cek apakah Flutter sudah siap:
 
 ```bash
 flutter doctor
 ```
 
-## Konfigurasi Base URL Flutter
+Kalau ada error di Android SDK atau emulator, selesaikan dulu lewat Android Studio.
 
-File yang perlu disesuaikan:
+## Langkah 8: Atur URL API di Flutter
+
+File yang harus diubah:
 
 [mobile/lib/core/services/api_service.dart](/opt/lampp/htdocs/app-disabilitas/mobile/lib/core/services/api_service.dart)
 
-Saat ini nilai default:
+Di file itu ada bagian seperti ini:
 
 ```dart
 static const String baseUrl = "http://localhost:8080/app-disabilitas/api";
@@ -224,9 +196,11 @@ static const String assetBaseUrl = "http://localhost:8080/app-disabilitas/upload
 static const String materialAssetBaseUrl = "http://localhost:8080/app-disabilitas/uploads/materials/";
 ```
 
-Gunakan URL sesuai target run:
+Pilih salah satu sesuai cara Anda menjalankan aplikasi.
 
-### Android emulator
+### Jika pakai Android emulator
+
+Gunakan:
 
 ```dart
 static const String baseUrl = "http://10.0.2.2:8080/app-disabilitas/api";
@@ -234,29 +208,40 @@ static const String assetBaseUrl = "http://10.0.2.2:8080/app-disabilitas/uploads
 static const String materialAssetBaseUrl = "http://10.0.2.2:8080/app-disabilitas/uploads/materials/";
 ```
 
-### Device fisik dalam satu jaringan Wi-Fi
+Kenapa bukan `localhost`?
 
-Ganti `192.168.1.xxx` dengan IP laptop/PC yang menjalankan Apache:
+Karena di emulator Android, `localhost` menunjuk ke emulator itu sendiri, bukan ke laptop Anda.
+
+### Jika pakai HP Android langsung
+
+Gunakan IP laptop Anda, misalnya:
 
 ```dart
-static const String baseUrl = "http://192.168.1.xxx:8080/app-disabilitas/api";
-static const String assetBaseUrl = "http://192.168.1.xxx:8080/app-disabilitas/uploads/profiles/";
-static const String materialAssetBaseUrl = "http://192.168.1.xxx:8080/app-disabilitas/uploads/materials/";
+static const String baseUrl = "http://192.168.1.5:8080/app-disabilitas/api";
+static const String assetBaseUrl = "http://192.168.1.5:8080/app-disabilitas/uploads/profiles/";
+static const String materialAssetBaseUrl = "http://192.168.1.5:8080/app-disabilitas/uploads/materials/";
 ```
 
-### Linux desktop / macOS desktop
+Syarat:
+
+- HP dan laptop harus satu Wi-Fi
+- Apache di XAMPP harus sedang aktif
+
+### Jika pakai Flutter Windows Desktop atau test lokal tertentu
+
+Gunakan:
 
 ```dart
 static const String baseUrl = "http://localhost:8080/app-disabilitas/api";
 ```
 
-Catatan:
+Kalau XAMPP Anda tidak memakai port `8080`, ubah menjadi:
 
-- `localhost` di Android emulator tidak menunjuk ke komputer host
-- `10.0.2.2` adalah alamat khusus untuk host pada emulator Android
-- untuk device fisik, Apache harus bisa diakses dari jaringan lokal
+```dart
+static const String baseUrl = "http://localhost/app-disabilitas/api";
+```
 
-## Menjalankan Aplikasi
+## Langkah 9: Jalankan Aplikasi
 
 Lihat device yang tersedia:
 
@@ -270,21 +255,15 @@ Jalankan aplikasi:
 flutter run
 ```
 
-Atau ke device tertentu:
+Kalau ingin ke device tertentu:
 
 ```bash
 flutter run -d <device-id>
 ```
 
-Jika ingin build APK:
-
-```bash
-flutter build apk
-```
-
 ## Akun Default
 
-Setelah `schema.sql` berhasil di-import, gunakan akun awal berikut:
+Setelah `schema.sql` berhasil di-import, gunakan akun ini:
 
 | Role | Username | Password |
 | --- | --- | --- |
@@ -292,57 +271,59 @@ Setelah `schema.sql` berhasil di-import, gunakan akun awal berikut:
 | Guru BK | `guru` | `guru123` |
 | Siswa | `budi` | `siswa123` |
 
-Jika isi `schema.sql` Anda berbeda, sesuaikan akun dengan data yang ada di database.
+## Urutan Singkat Paling Mudah
 
-## Alur Setup Cepat
+Kalau ingin cepat, ikuti urutan ini:
 
-Kalau ingin ringkas, urutannya seperti ini:
+1. Install `XAMPP`, `Flutter`, dan `Android Studio`
+2. Simpan proyek di `C:\xampp\htdocs\app-disabilitas`
+3. Jalankan `Apache` dan `MySQL` dari XAMPP
+4. Buka `phpMyAdmin`
+5. Buat database `app_disabilitas`
+6. Import file `schema.sql`
+7. Cek `api/db_config.php`
+8. Ubah `baseUrl` di `api_service.dart`
+9. Jalankan `flutter pub get`
+10. Jalankan `flutter run`
 
-1. Jalankan Apache dan MySQL dari XAMPP/LAMPP.
-2. Buat database `app_disabilitas`.
-3. Import [schema.sql](/opt/lampp/htdocs/app-disabilitas/schema.sql).
-4. Cek [api/db_config.php](/opt/lampp/htdocs/app-disabilitas/api/db_config.php).
-5. Pastikan folder `uploads/` bisa ditulis.
-6. Jalankan `flutter pub get` di folder `mobile/`.
-7. Sesuaikan `baseUrl` pada [api_service.dart](/opt/lampp/htdocs/app-disabilitas/mobile/lib/core/services/api_service.dart).
-8. Jalankan `flutter run`.
+## Jika Terjadi Error
 
-## Troubleshooting
+### 1. phpMyAdmin tidak bisa dibuka
 
-### API tidak bisa diakses
+Penyebab biasanya:
 
-Periksa:
+- Apache belum aktif
+- XAMPP belum dijalankan
 
-- Apache sudah aktif
-- path proyek benar-benar ada di `htdocs`
-- URL memakai port yang benar, misalnya `8080`
-
-### Login gagal padahal database sudah ada
-
-Periksa:
-
-- tabel `users` benar-benar terisi
-- konfigurasi database di `api/db_config.php` benar
-- endpoint `auth/login.php` bisa diakses
-
-### Aplikasi Flutter tidak bisa terhubung ke backend
-
-Penyebab paling umum:
-
-- `baseUrl` salah
-- memakai `localhost` di Android emulator
-- device fisik tidak satu jaringan dengan komputer host
-- firewall memblokir akses ke Apache
-
-### Upload file gagal
+### 2. Database tidak konek
 
 Periksa:
 
-- folder `uploads/` ada
-- permission folder mengizinkan write
-- URL upload dan URL asset sesuai dengan alamat backend
+- nama database harus `app_disabilitas`
+- username MySQL biasanya `root`
+- password di `db_config.php` harus benar
 
-## Catatan Pengembangan
+### 3. Flutter tidak bisa login ke API
 
-- `mobile/README.md` masih README bawaan Flutter dan belum menjadi dokumentasi utama proyek ini.
-- Dokumentasi utama sebaiknya menggunakan file [README.md](/opt/lampp/htdocs/app-disabilitas/README.md) di root repository ini.
+Periksa:
+
+- URL di `api_service.dart` sudah benar
+- kalau pakai emulator, gunakan `10.0.2.2`
+- kalau pakai HP, gunakan IP laptop, bukan `localhost`
+
+### 4. File upload gagal
+
+Periksa:
+
+- folder `uploads` lengkap
+- path proyek benar-benar ada di `C:\xampp\htdocs\app-disabilitas`
+
+## Catatan
+
+File README ini dipakai sebagai panduan utama proyek.
+
+Jika Anda mau, saya bisa lanjut bantu buat versi README yang lebih rapi lagi dengan:
+
+- gambar alur instalasi
+- penjelasan cara mencari IP laptop
+- penjelasan cara menjalankan lewat emulator Android
