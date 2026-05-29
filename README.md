@@ -1,284 +1,348 @@
-# GrahiEdu - Aplikasi Pembelajaran untuk Anak Berkebutuhan Khusus
+# GrahiEdu
 
-> Aplikasi mobile Flutter berbasis LAMP Stack untuk mendukung pembelajaran anak dengan disabilitas intelektual.
+Aplikasi pembelajaran untuk anak berkebutuhan khusus dengan backend PHP MySQL dan frontend Flutter. Proyek ini menyediakan:
 
----
+- aplikasi mobile Flutter untuk admin, guru BK, dan siswa
+- API backend berbasis PHP
+- database MySQL untuk data pengguna, materi, dan progres belajar
+- penyimpanan file lokal untuk foto profil, materi gambar, dan audio
 
-## 📋 Persyaratan Sistem
+## Gambaran Singkat
 
-| Kebutuhan | Versi |
-|-----------|-------|
-| Flutter | ≥ 3.0.0 |
-| Dart | ≥ 3.0.0 |
-| PHP | ≥ 7.4 |
-| MySQL | ≥ 5.7 |
-| XAMPP / LAMPP | Terbaru |
+Stack yang dipakai:
 
----
+- Backend: PHP + MySQL
+- Mobile app: Flutter
+- Web server lokal: XAMPP/LAMPP
+- API format: JSON
 
-## 🗄️ Setup Database
+Fitur utama:
 
-### 1. Jalankan XAMPP/LAMPP
-```bash
-# Linux
-sudo /opt/lampp/lampp start
+- login dan registrasi pengguna
+- manajemen user oleh admin
+- materi membaca, menulis, dan berhitung oleh guru
+- pencatatan progres belajar siswa
+- upload foto profil dan aset materi
 
-# Atau gunakan panel XAMPP
+## Software yang Dibutuhkan
+
+Pastikan software berikut sudah terpasang:
+
+| Software | Minimal | Keterangan |
+| --- | --- | --- |
+| PHP | 7.4+ | Untuk menjalankan API di folder `api/` |
+| MySQL / MariaDB | 5.7+ | Untuk database `app_disabilitas` |
+| XAMPP / LAMPP | Versi terbaru | Agar Apache dan MySQL mudah dijalankan |
+| Flutter SDK | 3.x | Untuk aplikasi mobile di folder `mobile/` |
+| Dart SDK | Mengikuti Flutter | Sudah ikut dari instalasi Flutter |
+| Android Studio / SDK Android | Disarankan | Untuk emulator Android dan build APK |
+| Git | Disarankan | Untuk clone dan version control |
+
+Tambahan yang biasanya dibutuhkan saat development Flutter:
+
+- browser Chrome jika ingin uji target web
+- device Android fisik atau emulator
+- `adb` untuk debug device Android
+
+## Struktur Proyek
+
+```text
+app-disabilitas/
+├── api/                    # Endpoint backend PHP
+├── mobile/                 # Aplikasi Flutter
+├── uploads/                # File upload lokal
+│   ├── profiles/
+│   ├── materials/
+│   ├── images/
+│   └── audio/
+├── schema.sql              # Skema dan data awal database
+└── README.md
 ```
 
-### 2. Buat Database
-Buka **phpMyAdmin** di `http://localhost/phpmyadmin`, lalu buat database baru:
+Folder penting:
+
+- `api/db_config.php`: koneksi database
+- `api/auth/`: login dan registrasi
+- `api/admin/`: manajemen user
+- `api/teacher/`: CRUD materi belajar
+- `api/student/`: simpan dan lihat progres
+- `api/user/`: profil, password, upload foto
+- `mobile/lib/core/services/api_service.dart`: base URL API Flutter
+
+## Persiapan Backend
+
+### 1. Letakkan proyek di folder web server
+
+Untuk LAMPP Linux, proyek idealnya berada di:
+
+```bash
+/opt/lampp/htdocs/app-disabilitas
+```
+
+Jika menggunakan XAMPP Windows, biasanya di:
+
+```bash
+C:\xampp\htdocs\app-disabilitas
+```
+
+### 2. Jalankan Apache dan MySQL
+
+Contoh LAMPP Linux:
+
+```bash
+sudo /opt/lampp/lampp start
+```
+
+Lalu pastikan layanan aktif:
+
+- Apache berjalan
+- MySQL berjalan
+
+### 3. Buat database
+
+Buka phpMyAdmin:
+
+```text
+http://localhost/phpmyadmin
+```
+
+Buat database dengan nama:
+
 ```sql
 CREATE DATABASE app_disabilitas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 3. Import Skema Database
-Jalankan SQL berikut di phpMyAdmin atau terminal MySQL:
+### 4. Import skema database
 
-```sql
-USE app_disabilitas;
+Gunakan file [schema.sql](/opt/lampp/htdocs/app-disabilitas/schema.sql) yang sudah tersedia.
 
--- Tabel Pengguna
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  full_name VARCHAR(100) NOT NULL,
-  username VARCHAR(50) NOT NULL UNIQUE,
-  password VARCHAR(255) NOT NULL,
-  role ENUM('admin', 'guru_bk', 'siswa') NOT NULL DEFAULT 'siswa',
-  profile_image VARCHAR(255) DEFAULT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+Opsi phpMyAdmin:
 
--- Tabel Materi Membaca
-CREATE TABLE reading_materials (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  type VARCHAR(50) DEFAULT 'word',
-  content VARCHAR(255) NOT NULL,
-  level INT DEFAULT 1,
-  created_by INT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-);
+1. Pilih database `app_disabilitas`
+2. Buka tab `Import`
+3. Pilih file `schema.sql`
+4. Jalankan import
 
--- Tabel Materi Menulis
-CREATE TABLE writing_materials (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  content VARCHAR(255) NOT NULL,
-  level INT DEFAULT 1,
-  created_by INT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-);
+Opsi terminal:
 
--- Tabel Materi Berhitung
-CREATE TABLE math_materials (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  operand1 INT NOT NULL,
-  operand2 INT NOT NULL,
-  explanation VARCHAR(255) DEFAULT NULL,
-  level INT DEFAULT 1,
-  created_by INT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-);
-
--- Tabel Progres Siswa
-CREATE TABLE student_progress (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  student_id INT NOT NULL,
-  module VARCHAR(50) NOT NULL,
-  material_id INT NOT NULL,
-  score INT DEFAULT 0,
-  completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
-);
+```bash
+mysql -u root -p app_disabilitas < schema.sql
 ```
 
-### 4. Tambahkan Data Awal (Akun Default)
+Jika MySQL lokal Anda tidak memakai password untuk user `root`, bisa pakai:
 
-```sql
-USE app_disabilitas;
-
--- Password: admin123
-INSERT INTO users (full_name, username, password, role) VALUES
-('Administrator', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'admin'),
--- Password: guru123
-('Guru Pembimbing Khusus', 'guru', '$2y$10$TKh8H1.PJy3GeDwzOXB4O.uqE5yVCm03LzR1FHCLDc9OaA89bvnG', 'guru_bk'),
--- Password: siswa123
-('Budi Santoso', 'budi', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'siswa');
-
--- Materi Awal
-INSERT INTO reading_materials (content, level, created_by) VALUES ('BUKU', 1, 2), ('MEJA', 1, 2), ('APEL', 2, 2);
-INSERT INTO writing_materials (content, level, created_by) VALUES ('A', 1, 2), ('I', 1, 2), ('BOLA', 2, 2);
-INSERT INTO math_materials (operand1, operand2, level, created_by) VALUES (1, 2, 1, 2), (3, 4, 1, 2), (5, 6, 2, 2);
+```bash
+mysql -u root app_disabilitas < schema.sql
 ```
 
-> **Catatan:** Password di atas menggunakan hash Bcrypt. Ubah melalui fitur "Ganti Password" di dalam aplikasi setelah login pertama.
+### 5. Konfigurasi koneksi database PHP
 
----
+Periksa file [api/db_config.php](/opt/lampp/htdocs/app-disabilitas/api/db_config.php).
 
-## 📁 Struktur Proyek
+Nilai default saat ini:
 
-```
-app-disabilitas/
-├── api/                        # Backend PHP
-│   ├── db_config.php           # Koneksi database
-│   ├── auth/
-│   │   └── login.php
-│   ├── teacher/
-│   │   ├── reading.php         # CRUD materi membaca
-│   │   ├── writing.php         # CRUD materi menulis
-│   │   └── math.php            # CRUD materi berhitung
-│   ├── student/
-│   │   └── progress.php        # Simpan & ambil progres
-│   └── user/
-│       ├── profile.php
-│       ├── update_profile.php
-│       ├── change_password.php
-│       └── upload_profile.php
-├── mobile/                     # Aplikasi Flutter
-│   ├── lib/
-│   │   ├── main.dart           # Entry point & routing
-│   │   ├── core/
-│   │   │   ├── constants/      # AppTheme
-│   │   │   ├── models/         # Data models
-│   │   │   └── services/       # ApiService, VoiceService
-│   │   ├── providers/          # AuthProvider
-│   │   └── ui/screens/
-│   │       ├── auth/           # LoginScreen
-│   │       ├── admin/          # AdminDashboard
-│   │       ├── teacher/        # TeacherDashboard
-│   │       ├── student/        # StudentHome
-│   │       ├── modules/        # ReadingScreen, WritingScreen, MathScreen
-│   │       └── profile/        # ProfileScreen
-│   └── pubspec.yaml
-└── uploads/profiles/           # Foto profil pengguna
-```
-
----
-
-## ⚙️ Konfigurasi Backend
-
-### db_config.php
-Pastikan file `/api/db_config.php` berisi:
 ```php
-<?php
-$host = 'localhost';
-$db   = 'app_disabilitas';
-$user = 'root';
-$pass = ''; // Sesuaikan dengan password MySQL Anda
-
-try {
-    $conn = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    http_response_code(500);
-    echo json_encode(["message" => "Koneksi database gagal: " . $e->getMessage()]);
-    exit();
-}
-?>
+$host = "localhost";
+$db_name = "app_disabilitas";
+$username = "root";
+$password = "";
 ```
 
-### Folder Uploads
-Buat folder untuk menyimpan foto profil:
+Ubah `$password` jika MySQL lokal Anda memakai password.
+
+### 6. Pastikan folder upload tersedia
+
+Project ini memakai folder upload lokal berikut:
+
+- `uploads/profiles`
+- `uploads/materials`
+- `uploads/images`
+- `uploads/audio`
+
+Jika perlu, buat ulang dengan:
+
 ```bash
 mkdir -p /opt/lampp/htdocs/app-disabilitas/uploads/profiles
-chmod 777 /opt/lampp/htdocs/app-disabilitas/uploads/profiles
+mkdir -p /opt/lampp/htdocs/app-disabilitas/uploads/materials
+mkdir -p /opt/lampp/htdocs/app-disabilitas/uploads/images
+mkdir -p /opt/lampp/htdocs/app-disabilitas/uploads/audio
 ```
 
----
+Untuk development lokal Linux, permission tulis kadang perlu disesuaikan:
 
-## 📱 Setup Flutter (Mobile)
+```bash
+chmod -R 777 /opt/lampp/htdocs/app-disabilitas/uploads
+```
 
-### 1. Masuk ke Direktori Mobile
+## URL Backend
+
+Jika Apache berjalan pada port default XAMPP/LAMPP di mesin ini, endpoint utama API biasanya:
+
+```text
+http://localhost:8080/app-disabilitas/api
+```
+
+Contoh endpoint login:
+
+```text
+http://localhost:8080/app-disabilitas/api/auth/login.php
+```
+
+Sebelum menjalankan Flutter, uji dulu apakah backend bisa diakses dari browser atau Postman.
+
+## Persiapan Aplikasi Flutter
+
+Masuk ke folder mobile:
+
 ```bash
 cd /opt/lampp/htdocs/app-disabilitas/mobile
 ```
 
-### 2. Install Dependencies
+Lalu install dependency:
+
 ```bash
 flutter pub get
 ```
 
-### 3. Konfigurasi URL API
+Disarankan cek environment Flutter:
 
-Buka `lib/core/services/api_service.dart` dan sesuaikan URL:
+```bash
+flutter doctor
+```
+
+## Konfigurasi Base URL Flutter
+
+File yang perlu disesuaikan:
+
+[mobile/lib/core/services/api_service.dart](/opt/lampp/htdocs/app-disabilitas/mobile/lib/core/services/api_service.dart)
+
+Saat ini nilai default:
 
 ```dart
-// Untuk emulator Android:
+static const String baseUrl = "http://localhost:8080/app-disabilitas/api";
+static const String assetBaseUrl = "http://localhost:8080/app-disabilitas/uploads/profiles/";
+static const String materialAssetBaseUrl = "http://localhost:8080/app-disabilitas/uploads/materials/";
+```
+
+Gunakan URL sesuai target run:
+
+### Android emulator
+
+```dart
 static const String baseUrl = "http://10.0.2.2:8080/app-disabilitas/api";
+static const String assetBaseUrl = "http://10.0.2.2:8080/app-disabilitas/uploads/profiles/";
+static const String materialAssetBaseUrl = "http://10.0.2.2:8080/app-disabilitas/uploads/materials/";
+```
 
-// Untuk device fisik (ganti dengan IP komputer Anda):
-static const String baseUrl = "http://192.168.1.XXX:8080/app-disabilitas/api";
+### Device fisik dalam satu jaringan Wi-Fi
 
-// Untuk localhost (Linux/macOS desktop):
+Ganti `192.168.1.xxx` dengan IP laptop/PC yang menjalankan Apache:
+
+```dart
+static const String baseUrl = "http://192.168.1.xxx:8080/app-disabilitas/api";
+static const String assetBaseUrl = "http://192.168.1.xxx:8080/app-disabilitas/uploads/profiles/";
+static const String materialAssetBaseUrl = "http://192.168.1.xxx:8080/app-disabilitas/uploads/materials/";
+```
+
+### Linux desktop / macOS desktop
+
+```dart
 static const String baseUrl = "http://localhost:8080/app-disabilitas/api";
 ```
 
-### 4. Jalankan Aplikasi
+Catatan:
+
+- `localhost` di Android emulator tidak menunjuk ke komputer host
+- `10.0.2.2` adalah alamat khusus untuk host pada emulator Android
+- untuk device fisik, Apache harus bisa diakses dari jaringan lokal
+
+## Menjalankan Aplikasi
+
+Lihat device yang tersedia:
+
 ```bash
-# Debug mode
-flutter run
-
-# Untuk device spesifik
-flutter run -d <device-id>
-
-# Lihat daftar device
 flutter devices
 ```
 
----
+Jalankan aplikasi:
 
-## 🔑 Akun Default
+```bash
+flutter run
+```
+
+Atau ke device tertentu:
+
+```bash
+flutter run -d <device-id>
+```
+
+Jika ingin build APK:
+
+```bash
+flutter build apk
+```
+
+## Akun Default
+
+Setelah `schema.sql` berhasil di-import, gunakan akun awal berikut:
 
 | Role | Username | Password |
-|------|----------|----------|
+| --- | --- | --- |
 | Admin | `admin` | `admin123` |
 | Guru BK | `guru` | `guru123` |
 | Siswa | `budi` | `siswa123` |
 
----
+Jika isi `schema.sql` Anda berbeda, sesuaikan akun dengan data yang ada di database.
 
-## ✨ Fitur Utama
+## Alur Setup Cepat
 
-### 👨‍🏫 Guru BK
-- Kelola materi Membaca, Menulis, Berhitung (CRUD)
-- Lihat progres belajar semua siswa
-- Edit profil dan ganti password
+Kalau ingin ringkas, urutannya seperti ini:
 
-### 🎓 Siswa
-- Belajar Membaca: baca kata & dengarkan suara
-- Belajar Menulis: gambar huruf dengan jari
-- Belajar Berhitung: jawab soal penjumlahan
-- Feedback suara otomatis saat selesai
+1. Jalankan Apache dan MySQL dari XAMPP/LAMPP.
+2. Buat database `app_disabilitas`.
+3. Import [schema.sql](/opt/lampp/htdocs/app-disabilitas/schema.sql).
+4. Cek [api/db_config.php](/opt/lampp/htdocs/app-disabilitas/api/db_config.php).
+5. Pastikan folder `uploads/` bisa ditulis.
+6. Jalankan `flutter pub get` di folder `mobile/`.
+7. Sesuaikan `baseUrl` pada [api_service.dart](/opt/lampp/htdocs/app-disabilitas/mobile/lib/core/services/api_service.dart).
+8. Jalankan `flutter run`.
 
-### 🛡️ Admin
-- Lihat semua pengguna
-- Pantau seluruh progres siswa
-- Akses Dashboard Guru
+## Troubleshooting
 
----
+### API tidak bisa diakses
 
-## 🛠️ Dependensi Flutter
+Periksa:
 
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
-  provider: ^6.0.0
-  http: ^1.0.0
-  image_picker: ^1.0.0
-  flutter_tts: ^3.8.5
-  http_parser: ^4.0.2
-  google_fonts: ^6.0.0
-```
+- Apache sudah aktif
+- path proyek benar-benar ada di `htdocs`
+- URL memakai port yang benar, misalnya `8080`
 
----
+### Login gagal padahal database sudah ada
 
-## 📞 Support
+Periksa:
 
-Proyek ini dibuat untuk mendukung pembelajaran anak berkebutuhan khusus. Jika menemukan kendala, periksa:
-1. XAMPP/LAMPP sudah berjalan
-2. Database sudah diimport
-3. URL API sudah sesuai
-4. Port 8080 tidak diblokir firewall
+- tabel `users` benar-benar terisi
+- konfigurasi database di `api/db_config.php` benar
+- endpoint `auth/login.php` bisa diakses
+
+### Aplikasi Flutter tidak bisa terhubung ke backend
+
+Penyebab paling umum:
+
+- `baseUrl` salah
+- memakai `localhost` di Android emulator
+- device fisik tidak satu jaringan dengan komputer host
+- firewall memblokir akses ke Apache
+
+### Upload file gagal
+
+Periksa:
+
+- folder `uploads/` ada
+- permission folder mengizinkan write
+- URL upload dan URL asset sesuai dengan alamat backend
+
+## Catatan Pengembangan
+
+- `mobile/README.md` masih README bawaan Flutter dan belum menjadi dokumentasi utama proyek ini.
+- Dokumentasi utama sebaiknya menggunakan file [README.md](/opt/lampp/htdocs/app-disabilitas/README.md) di root repository ini.
