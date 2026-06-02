@@ -24,6 +24,16 @@ switch($method) {
     case 'POST':
         $data = json_decode(file_get_contents("php://input"));
         if (!empty($data->username) && !empty($data->password) && !empty($data->role) && !empty($data->full_name)) {
+            $check = $conn->prepare("SELECT id FROM users WHERE username = :username LIMIT 1");
+            $check->bindParam(":username", $data->username);
+            $check->execute();
+
+            if ($check->fetch(PDO::FETCH_ASSOC)) {
+                http_response_code(409);
+                echo json_encode(["message" => "Username sudah digunakan"]);
+                break;
+            }
+
             $hashed = password_hash($data->password, PASSWORD_BCRYPT);
             $query = "INSERT INTO users (username, password, role, full_name) VALUES (:username, :password, :role, :full_name)";
             $stmt = $conn->prepare($query);
@@ -47,6 +57,19 @@ switch($method) {
     case 'PUT':
         $data = json_decode(file_get_contents("php://input"));
         if (!empty($data->id)) {
+            if (!empty($data->username)) {
+                $check = $conn->prepare("SELECT id FROM users WHERE username = :username AND id != :id LIMIT 1");
+                $check->bindParam(":username", $data->username);
+                $check->bindParam(":id", $data->id);
+                $check->execute();
+
+                if ($check->fetch(PDO::FETCH_ASSOC)) {
+                    http_response_code(409);
+                    echo json_encode(["message" => "Username sudah digunakan"]);
+                    break;
+                }
+            }
+
             $update_fields = [];
             if (!empty($data->username)) $update_fields[] = "username = :username";
             if (!empty($data->password)) $update_fields[] = "password = :password";
@@ -63,7 +86,10 @@ switch($method) {
             $stmt = $conn->prepare($query);
             $stmt->bindParam(":id", $data->id);
             if (!empty($data->username)) $stmt->bindParam(":username", $data->username);
-            if (!empty($data->password)) $stmt->bindParam(":password", $data->password);
+            if (!empty($data->password)) {
+                $hashed = password_hash($data->password, PASSWORD_BCRYPT);
+                $stmt->bindParam(":password", $hashed);
+            }
             if (!empty($data->role)) $stmt->bindParam(":role", $data->role);
             if (!empty($data->full_name)) $stmt->bindParam(":full_name", $data->full_name);
 
@@ -78,6 +104,16 @@ switch($method) {
 
     case 'DELETE':
         if (isset($_GET['id'])) {
+            $checkProgress = $conn->prepare("SELECT id FROM student_progress WHERE student_id = :id LIMIT 1");
+            $checkProgress->bindParam(":id", $_GET['id']);
+            $checkProgress->execute();
+
+            if ($checkProgress->fetch(PDO::FETCH_ASSOC)) {
+                http_response_code(409);
+                echo json_encode(["message" => "User tidak bisa dihapus karena masih memiliki data progres"]);
+                break;
+            }
+
             $query = "DELETE FROM users WHERE id = :id";
             $stmt = $conn->prepare($query);
             $stmt->bindParam(":id", $_GET['id']);

@@ -91,6 +91,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 if (success) {
                   if (mounted) Navigator.pop(context);
                   _loadAll();
+                } else if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Gagal menambah pengguna. Cek username atau server.")),
+                  );
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
@@ -100,6 +104,123 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ),
       ),
     );
+  }
+
+  void _showEditUserDialog(User user) {
+    final fullNameController = TextEditingController(text: user.fullName);
+    final usernameController = TextEditingController(text: user.username);
+    final passwordController = TextEditingController();
+    String selectedRole = user.role;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Edit Pengguna", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: fullNameController, decoration: const InputDecoration(labelText: "Nama Lengkap", prefixIcon: Icon(Icons.person_outline))),
+                const SizedBox(height: 12),
+                TextField(controller: usernameController, decoration: const InputDecoration(labelText: "Username", prefixIcon: Icon(Icons.alternate_email))),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordController,
+                  decoration: const InputDecoration(
+                    labelText: "Password Baru",
+                    prefixIcon: Icon(Icons.lock_outline),
+                    helperText: "Kosongkan jika tidak ingin mengubah password",
+                  ),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedRole,
+                  items: const [
+                    DropdownMenuItem(value: 'admin', child: Text("Admin")),
+                    DropdownMenuItem(value: 'guru_bk', child: Text("Guru BK")),
+                    DropdownMenuItem(value: 'siswa', child: Text("Siswa")),
+                  ],
+                  onChanged: (val) => setDialogState(() => selectedRole = val!),
+                  decoration: InputDecoration(
+                    labelText: "Peran",
+                    prefixIcon: const Icon(Icons.badge_outlined),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
+            ElevatedButton(
+              onPressed: () async {
+                if (fullNameController.text.isEmpty || usernameController.text.isEmpty) return;
+                final success = await _api.updateUser(
+                  id: user.id,
+                  fullName: fullNameController.text,
+                  username: usernameController.text,
+                  role: selectedRole,
+                  password: passwordController.text,
+                );
+                if (success) {
+                  if (mounted) Navigator.pop(context);
+                  _loadAll();
+                } else if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Gagal mengubah pengguna. Cek username atau server.")),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              child: const Text("Update", style: TextStyle(color: Colors.black87)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteUser(User user) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Hapus Pengguna"),
+        content: Text("Hapus akun ${user.fullName}?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Batal")),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text("Hapus", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final currentUser = Provider.of<AuthProvider>(context, listen: false).user;
+    if (currentUser?.id == user.id) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Akun yang sedang dipakai tidak bisa dihapus.")),
+        );
+      }
+      return;
+    }
+
+    final success = await _api.deleteUser(user.id);
+    if (success) {
+      _loadAll();
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal menghapus pengguna. Bisa jadi masih punya data progres.")),
+      );
+    }
   }
 
   @override
@@ -238,6 +359,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Text("@${u.username}", style: const TextStyle(color: Colors.grey, fontSize: 13)),
             ])),
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)), child: Text(u.role.toUpperCase(), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold))),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') _showEditUserDialog(u);
+                if (value == 'delete') _deleteUser(u);
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'edit', child: Text("Edit")),
+                PopupMenuItem(value: 'delete', child: Text("Hapus")),
+              ],
+            ),
           ]),
         );
       },

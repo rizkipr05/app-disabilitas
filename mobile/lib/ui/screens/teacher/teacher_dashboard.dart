@@ -65,9 +65,6 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     
     final op1Controller = TextEditingController(text: (isEdit && _activeCategory == 'math') ? (material as MathMaterial).operand1.toString() : "");
     final op2Controller = TextEditingController(text: (isEdit && _activeCategory == 'math') ? (material as MathMaterial).operand2.toString() : "");
-
-    final op1Controller = TextEditingController(text: (isEdit && _activeCategory == 'math') ? (material as MathMaterial).operand1.toString() : "");
-    final op2Controller = TextEditingController(text: (isEdit && _activeCategory == 'math') ? (material as MathMaterial).operand2.toString() : "");
     final explanationController = TextEditingController(text: (isEdit && _activeCategory == 'math') ? (material as MathMaterial).explanation ?? "" : "");
 
     File? localImage;

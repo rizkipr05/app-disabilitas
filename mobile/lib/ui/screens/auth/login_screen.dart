@@ -18,19 +18,23 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() async {
     setState(() => _isLoading = true);
     try {
-      final success = await Provider.of<AuthProvider>(context, listen: false)
-          .login(_usernameController.text, _passwordController.text);
-      
+      final success = await Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).login(_usernameController.text, _passwordController.text);
+
       if (!success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Login gagal. Periksa nama dan kelas.")),
+          const SnackBar(
+            content: Text("Login gagal. Periksa username dan password."),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Terjadi kesalahan: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Terjadi kesalahan: $e")));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -55,14 +59,17 @@ class _LoginScreenState extends State<LoginScreen> {
             Positioned(
               bottom: -50,
               left: -50,
-              child: _buildDecorativeCircle(200, Colors.white.withOpacity(0.15)),
+              child: _buildDecorativeCircle(
+                200,
+                Colors.white.withOpacity(0.15),
+              ),
             ),
             Positioned(
               top: 200,
               left: -80,
               child: _buildDecorativeCircle(150, Colors.white.withOpacity(0.1)),
             ),
-            
+
             // Content
             Center(
               child: SingleChildScrollView(
@@ -83,21 +90,29 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(Icons.school_rounded, size: 80, color: AppTheme.primaryColor),
+                      child: const Icon(
+                        Icons.school_rounded,
+                        size: 80,
+                        color: AppTheme.primaryColor,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     const Text(
                       "GrahiEdu",
                       style: TextStyle(
-                        color: Colors.black87, 
-                        fontSize: 40, 
+                        color: Colors.black87,
+                        fontSize: 40,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.2,
                       ),
                     ),
                     const Text(
                       "Belajar Menyenangkan",
-                      style: TextStyle(color: Colors.black54, fontSize: 18, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 48),
                     AppTheme.glassCard(
@@ -105,14 +120,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           _buildTextField(
                             controller: _usernameController,
-                            label: "nama",
-                            icon: Icons.person_rounded,
+                            label: "username",
+                            icon: Icons.alternate_email_rounded,
                           ),
                           const SizedBox(height: 20),
                           _buildTextField(
                             controller: _passwordController,
-                            label: "kelas",
-                            icon: Icons.class_rounded,
+                            label: "password",
+                            icon: Icons.lock_rounded,
                             obscure: true,
                           ),
                           const SizedBox(height: 32),
@@ -125,17 +140,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                 backgroundColor: AppTheme.primaryColor,
                                 foregroundColor: Colors.black87,
                                 elevation: 8,
-                                shadowColor: AppTheme.primaryColor.withOpacity(0.4),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                shadowColor: AppTheme.primaryColor.withOpacity(
+                                  0.4,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
                               ),
-                              child: _isLoading 
-                                ? const CircularProgressIndicator(color: Colors.black87)
-                                : const Text(
-                                    "MASUK", 
-                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 1.5)
-                                  ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.black87,
+                                    )
+                                  : const Text(
+                                      "MASUK",
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
+                                        letterSpacing: 1.5,
+                                      ),
+                                    ),
                             ),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -153,10 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:ui' as ui;
 import '../../../core/constants/app_theme.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/drawing_validation_service.dart';
 import '../../../core/services/voice_service.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../core/models/math_material.dart';
@@ -53,77 +53,27 @@ class _MathScreenState extends State<MathScreen> {
 
   void _clearCanvas() => setState(() { _strokes.clear(); _currentStroke.clear(); });
 
-  /// Advanced Raster-based validation using Intersection over Union (IoU)
   Future<bool> _validateDrawing() async {
     final RenderBox? renderBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return false;
-    final size = renderBox.size;
-    final int width = size.width.toInt();
-    final int height = size.height.toInt();
-
-    // 1. Rasterize Target Text
-    final targetRecorder = ui.PictureRecorder();
-    final targetCanvas = Canvas(targetRecorder);
-    final textPainter = TextPainter(
-      text: TextSpan(text: "$_correctAnswer", style: const TextStyle(fontSize: 160, fontWeight: FontWeight.bold, color: Colors.black)),
-      textDirection: TextDirection.ltr,
+    final result = await DrawingValidationService.compareDrawingToText(
+      canvasSize: renderBox.size,
+      targetText: "$_correctAnswer",
+      targetStyle: const TextStyle(
+        fontSize: 160,
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+      ),
+      strokes: _strokes,
+      userStrokeWidth: 15,
     );
-    textPainter.layout();
-    final textOffset = Offset((size.width - textPainter.width) / 2, (size.height - textPainter.height) / 2);
-    textPainter.paint(targetCanvas, textOffset);
-    final targetImg = await targetRecorder.endRecording().toImage(width, height);
-    final targetData = await targetImg.toByteData(format: ui.ImageByteFormat.rawRgba);
 
-    // 2. Rasterize User Strokes
-    final userRecorder = ui.PictureRecorder();
-    final userCanvas = Canvas(userRecorder);
-    final paint = Paint()..color = Colors.black..strokeWidth = 15..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round..style = PaintingStyle.stroke;
-    for (var stroke in _strokes) {
-      final path = Path();
-      bool started = false;
-      for (var p in stroke) {
-        if (p == null) { started = false; continue; }
-        if (!started) { path.moveTo(p.dx, p.dy); started = true; }
-        else { path.lineTo(p.dx, p.dy); }
-      }
-      userCanvas.drawPath(path, paint);
-    }
-    final userImg = await userRecorder.endRecording().toImage(width, height);
-    final userData = await userImg.toByteData(format: ui.ImageByteFormat.rawRgba);
+    if (result == null) return false;
+    debugPrint(
+      "MATH VALIDATION: Coverage=${(result.coverage * 100).toStringAsFixed(1)}%, Precision=${(result.precision * 100).toStringAsFixed(1)}%",
+    );
 
-    if (targetData == null || userData == null) return false;
-
-    int intersectionCount = 0;
-    int targetCount = 0;
-    int userCount = 0;
-    
-    // Sampling pixels for performance
-    const int step = 4;
-    for (int y = 0; y < height; y += step) {
-      for (int x = 0; x < width; x += step) {
-        final index = (y * width + x) * 4;
-        final targetAlpha = targetData.getUint8(index + 3);
-        final userAlpha = userData.getUint8(index + 3);
-
-        final bool isTarget = targetAlpha > 50;
-        final bool isUser = userAlpha > 50;
-
-        if (isTarget) targetCount++;
-        if (isUser) userCount++;
-        if (isTarget && isUser) intersectionCount++;
-      }
-    }
-
-    if (targetCount == 0) return true;
-    
-    final coverage = intersectionCount / targetCount; // How much of the target did the user cover
-    final precision = intersectionCount / userCount;  // How much of the user's drawing is actually on the target
-
-    print("MATH VALIDATION: Coverage=${(coverage*100).toStringAsFixed(1)}%, Precision=${(precision*100).toStringAsFixed(1)}%");
-
-    // Extremely Strict: Must cover at least 60% of the target AND at least 55% of user drawing must be on target
-    // This makes it much harder for a '1' to pass for a '5' because '1' only covers ~20% of '5'.
-    return coverage > 0.6 && precision > 0.55;
+    return result.coverage > 0.44 && result.precision > 0.40;
   }
 
   Future<void> _submit() async {
@@ -136,9 +86,9 @@ class _MathScreenState extends State<MathScreen> {
     final isValid = await _validateDrawing();
     if (!isValid) {
       setState(() => _isSaving = false);
-      await VoiceService().speak("Wah, sepertinya hitungannya belum tepat atau tulisannya kurang pas. Coba lagi ya!");
+      await VoiceService().speak("Wah, jawabannya belum sesuai. Coba lagi ya!");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("❌ Jawaban belum tepat, coba jiplak bantuan atau hitung lagi ya!"), backgroundColor: Colors.orange));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("❌ Jawaban belum sesuai, coba hitung dan tulis lagi ya!"), backgroundColor: Colors.orange));
       }
       return;
     }

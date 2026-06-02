@@ -9,14 +9,29 @@ import '../models/writing_material.dart';
 import '../models/student_progress.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:8080/app-disabilitas/api"; // Adjust to actual IP for physical device
-  static const String assetBaseUrl = "http://localhost:8080/app-disabilitas/uploads/profiles/";
-  static const String materialAssetBaseUrl = "http://localhost:8080/app-disabilitas/uploads/materials/";
+  static const Map<String, String> _jsonHeaders = {
+    "Content-Type": "application/json",
+    "Accept": "application/json",
+  };
+
+  static String get _host {
+    if (Platform.isAndroid) {
+      return "10.0.2.2:8080";
+    }
+    return "localhost:8080";
+  }
+
+  static String get baseUrl => "http://$_host/app-disabilitas/api";
+  static String get assetBaseUrl =>
+      "http://$_host/app-disabilitas/uploads/profiles/";
+  static String get materialAssetBaseUrl =>
+      "http://$_host/app-disabilitas/uploads/materials/";
 
   Future<User?> login(String username, String password) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/auth/login.php"),
+        headers: _jsonHeaders,
         body: jsonEncode({"username": username, "password": password}),
       );
 
@@ -31,11 +46,20 @@ class ApiService {
   }
 
   /// Returns null on success, or error message string on failure.
-  Future<String?> register(String fullName, String username, String password) async {
+  Future<String?> register(
+    String fullName,
+    String username,
+    String password,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/auth/register.php"),
-        body: jsonEncode({"full_name": fullName, "username": username, "password": password}),
+        headers: _jsonHeaders,
+        body: jsonEncode({
+          "full_name": fullName,
+          "username": username,
+          "password": password,
+        }),
       );
       if (response.statusCode == 201) return null; // success
       final data = jsonDecode(response.body);
@@ -59,10 +83,16 @@ class ApiService {
     return [];
   }
 
-  Future<bool> addUser(String fullName, String username, String password, String role) async {
+  Future<bool> addUser(
+    String fullName,
+    String username,
+    String password,
+    String role,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/admin/users.php"),
+        headers: _jsonHeaders,
         body: jsonEncode({
           "full_name": fullName,
           "username": username,
@@ -77,9 +107,53 @@ class ApiService {
     }
   }
 
+  Future<bool> updateUser({
+    required int id,
+    required String fullName,
+    required String username,
+    required String role,
+    String? password,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        "id": id,
+        "full_name": fullName,
+        "username": username,
+        "role": role,
+      };
+      if (password != null && password.isNotEmpty) {
+        body["password"] = password;
+      }
+
+      final response = await http.put(
+        Uri.parse("$baseUrl/admin/users.php"),
+        headers: _jsonHeaders,
+        body: jsonEncode(body),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Update user error: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteUser(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/admin/users.php?id=$id"),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Delete user error: $e");
+      return false;
+    }
+  }
+
   Future<List<ReadingMaterial>> getReadingMaterials() async {
     try {
-      final response = await http.get(Uri.parse("$baseUrl/teacher/reading.php"));
+      final response = await http.get(
+        Uri.parse("$baseUrl/teacher/reading.php"),
+      );
       if (response.statusCode == 200) {
         List data = jsonDecode(response.body);
         return data.map((m) => ReadingMaterial.fromJson(m)).toList();
@@ -105,7 +179,9 @@ class ApiService {
 
   Future<List<WritingMaterial>> getWritingMaterials() async {
     try {
-      final response = await http.get(Uri.parse("$baseUrl/teacher/writing.php"));
+      final response = await http.get(
+        Uri.parse("$baseUrl/teacher/writing.php"),
+      );
       if (response.statusCode == 200) {
         List data = jsonDecode(response.body);
         return data.map((m) => WritingMaterial.fromJson(m)).toList();
@@ -120,76 +196,120 @@ class ApiService {
 
   Future<bool> addReadingMaterial(Map<String, dynamic> data) async {
     try {
-      final response = await http.post(Uri.parse("$baseUrl/teacher/reading.php"), body: jsonEncode(data));
+      final response = await http.post(
+        Uri.parse("$baseUrl/teacher/reading.php"),
+        body: jsonEncode(data),
+      );
       return response.statusCode == 201;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> updateReadingMaterial(Map<String, dynamic> data) async {
     try {
-      final response = await http.put(Uri.parse("$baseUrl/teacher/reading.php"), body: jsonEncode(data));
+      final response = await http.put(
+        Uri.parse("$baseUrl/teacher/reading.php"),
+        body: jsonEncode(data),
+      );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> deleteReadingMaterial(int id) async {
     try {
-      final response = await http.delete(Uri.parse("$baseUrl/teacher/reading.php?id=$id"));
+      final response = await http.delete(
+        Uri.parse("$baseUrl/teacher/reading.php?id=$id"),
+      );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   // --- MATH MATERIALS ---
 
   Future<bool> addMathMaterial(Map<String, dynamic> data) async {
     try {
-      final response = await http.post(Uri.parse("$baseUrl/teacher/math.php"), body: jsonEncode(data));
+      final response = await http.post(
+        Uri.parse("$baseUrl/teacher/math.php"),
+        body: jsonEncode(data),
+      );
       return response.statusCode == 201;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> updateMathMaterial(Map<String, dynamic> data) async {
     try {
-      final response = await http.put(Uri.parse("$baseUrl/teacher/math.php"), body: jsonEncode(data));
+      final response = await http.put(
+        Uri.parse("$baseUrl/teacher/math.php"),
+        body: jsonEncode(data),
+      );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> deleteMathMaterial(int id) async {
     try {
-      final response = await http.delete(Uri.parse("$baseUrl/teacher/math.php?id=$id"));
+      final response = await http.delete(
+        Uri.parse("$baseUrl/teacher/math.php?id=$id"),
+      );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   // --- WRITING MATERIALS ---
 
   Future<bool> addWritingMaterial(Map<String, dynamic> data) async {
     try {
-      final response = await http.post(Uri.parse("$baseUrl/teacher/writing.php"), body: jsonEncode(data));
+      final response = await http.post(
+        Uri.parse("$baseUrl/teacher/writing.php"),
+        body: jsonEncode(data),
+      );
       return response.statusCode == 201;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> updateWritingMaterial(Map<String, dynamic> data) async {
     try {
-      final response = await http.put(Uri.parse("$baseUrl/teacher/writing.php"), body: jsonEncode(data));
+      final response = await http.put(
+        Uri.parse("$baseUrl/teacher/writing.php"),
+        body: jsonEncode(data),
+      );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> deleteWritingMaterial(int id) async {
     try {
-      final response = await http.delete(Uri.parse("$baseUrl/teacher/writing.php?id=$id"));
+      final response = await http.delete(
+        Uri.parse("$baseUrl/teacher/writing.php?id=$id"),
+      );
       return response.statusCode == 200;
-    } catch (e) { return false; }
+    } catch (e) {
+      return false;
+    }
   }
 
   // --- STUDENT PROGRESS ---
 
   Future<List<StudentProgress>> getStudentProgress() async {
     try {
-      final response = await http.get(Uri.parse("$baseUrl/student/progress.php"));
+      final response = await http.get(
+        Uri.parse("$baseUrl/student/progress.php"),
+      );
       if (response.statusCode == 200) {
         List data = jsonDecode(response.body);
         return data.map((p) => StudentProgress.fromJson(p)).toList();
@@ -200,15 +320,21 @@ class ApiService {
     return [];
   }
 
-  Future<bool> postProgress(int studentId, String module, int materialId, int score) async {
+  Future<bool> postProgress(
+    int studentId,
+    String module,
+    int materialId,
+    int score,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/student/progress.php"),
+        headers: _jsonHeaders,
         body: jsonEncode({
           "student_id": studentId,
           "module": module,
           "material_id": materialId,
-          "score": score
+          "score": score,
         }),
       );
       return response.statusCode == 201;
@@ -220,7 +346,9 @@ class ApiService {
 
   Future<User?> getUserProfile(int id) async {
     try {
-      final response = await http.get(Uri.parse("$baseUrl/user/profile.php?id=$id"));
+      final response = await http.get(
+        Uri.parse("$baseUrl/user/profile.php?id=$id"),
+      );
       if (response.statusCode == 200) {
         return User.fromJson(jsonDecode(response.body));
       }
@@ -230,11 +358,19 @@ class ApiService {
     return null;
   }
 
-  Future<bool> updateUserProfile(int id, String fullName, String username) async {
+  Future<bool> updateUserProfile(
+    int id,
+    String fullName,
+    String username,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/user/update_profile.php"),
-        body: jsonEncode({"id": id, "full_name": fullName, "username": username}),
+        body: jsonEncode({
+          "id": id,
+          "full_name": fullName,
+          "username": username,
+        }),
       );
       return response.statusCode == 200;
     } catch (e) {
@@ -245,13 +381,18 @@ class ApiService {
 
   Future<String?> uploadProfileImage(int userId, File imageFile) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse("$baseUrl/user/upload_profile.php"));
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse("$baseUrl/user/upload_profile.php"),
+      );
       request.fields['user_id'] = userId.toString();
-      request.files.add(await http.MultipartFile.fromPath(
-        'image', 
-        imageFile.path,
-        contentType: MediaType('image', 'jpeg'),
-      ));
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          imageFile.path,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -268,12 +409,17 @@ class ApiService {
 
   Future<String?> uploadMaterialImage(File imageFile) async {
     try {
-      var request = http.MultipartRequest('POST', Uri.parse("$baseUrl/teacher/upload_material_image.php"));
-      request.files.add(await http.MultipartFile.fromPath(
-        'image', 
-        imageFile.path,
-        contentType: MediaType('image', 'jpeg'),
-      ));
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse("$baseUrl/teacher/upload_material_image.php"),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          imageFile.path,
+          contentType: MediaType('image', 'jpeg'),
+        ),
+      );
 
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
@@ -289,7 +435,6 @@ class ApiService {
   }
 
   Future<bool> changePassword(int id, String newPassword) async {
-
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/user/change_password.php"),

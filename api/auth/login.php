@@ -12,8 +12,7 @@ if (!empty($data->username) && !empty($data->password)) {
     if ($stmt->rowCount() > 0) {
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         
-        // Simple password check for demo, use password_verify in production
-        if ($data->password == $row['password']) {
+        if (password_verify($data->password, $row['password'])) {
             http_response_code(200);
             echo json_encode([
                 "message" => "Login successful",
