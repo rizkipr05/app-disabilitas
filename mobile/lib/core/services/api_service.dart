@@ -14,18 +14,14 @@ class ApiService {
     "Accept": "application/json",
   };
 
-  static String get _host {
-    if (Platform.isAndroid) {
-      return "10.0.2.2:8080";
-    }
-    return "localhost:8080";
-  }
+  static const String baseUrl =
+      "https://grahiedu.my.id/api";
 
-  static String get baseUrl => "http://$_host/app-disabilitas/api";
-  static String get assetBaseUrl =>
-      "http://$_host/app-disabilitas/uploads/profiles/";
-  static String get materialAssetBaseUrl =>
-      "http://$_host/app-disabilitas/uploads/materials/";
+  static const String assetBaseUrl =
+      "https://grahiedu.my.id/uploads/profiles/";
+
+  static const String materialAssetBaseUrl =
+      "https://grahiedu.my.id/uploads/materials/";
 
   Future<User?> login(String username, String password) async {
     try {
